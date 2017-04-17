@@ -57,4 +57,34 @@
     <div id="tablePlace" class="slideAnimation"></div>
 
     <div class="ui divider"></div>
+
+    <div class="ui mini horizontal statistics" ng-if="ctrl.withoutForbiddenLength">
+        <div class="statistic">
+            <div class="value">
+                Длина пути без запрещенной клетки:
+            </div>
+            <div class="label">
+                {{ctrl.withoutForbiddenLength}}
+            </div>
+        </div>
+        <div class="statistic">
+            <div class="value">
+                Длина пути с запрещенной клеткой:
+            </div>
+            <div class="label">
+                {{ctrl.withForbiddenLength}}
+            </div>
+        </div>
+        <div class="statistic">
+            <div class="value">
+                Зеленых:
+            </div>
+            <div class="label">
+                {{ctrl.greenCells}}
+            </div>
+        </div>
+    </div>
+
+    <div class="ui divider"></div>
+
 </div>

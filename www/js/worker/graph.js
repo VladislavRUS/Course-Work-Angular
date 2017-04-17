@@ -23,9 +23,27 @@ var graph = {
 
 		return {
 			withoutForbidden: pathWithoutForbidden,
-			withForbidden: pathWithForbidden
+			withForbidden: pathWithForbidden,
+			statistics: self.pathStat(pathWithForbidden.split(' '), pathWithoutForbidden.split(' '))
 		}
 	},
+
+	pathStat: function(withForbidden, withoutForbidden) {
+		var withForbiddenLength = withForbidden.length;
+		var withoutForbiddenLength = withoutForbidden.length;
+
+		var diff = withForbidden.filter(function(cell) {
+			return withoutForbidden.indexOf(cell) == -1;
+		});
+
+		return {
+			diff: diff,
+			poss: diff.length / withForbiddenLength,
+			withForbiddenLength: withForbiddenLength,
+			withoutForbiddenLength: withoutForbiddenLength
+		}
+	},
+
 
 	constructGraph: function(matrix) {
 		var self = this;

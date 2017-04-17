@@ -59,12 +59,34 @@ function tableDrawFactory($timeout, $rootScope) {
 				if (elm.style.backgroundColor == 'black') {
 					elm.style.backgroundColor = 'orange';
 
-				} else if (elm.style.backgroundColor == 'white') {
-					elm.style.backgroundColor = 'red';
-
 				} else {
-					elm.style.backgroundColor = 'green';
+					elm.style.backgroundColor = 'red';
 				}
+
+			}, 50 * idx);
+		});
+	};
+
+	factory.markDiff = function(path) {
+		path.forEach(function(p, idx) {
+			$timeout(function() {
+
+				var elm = document.getElementById(p);
+
+				elm.style.backgroundColor = 'green';
+
+			}, 50 * idx);
+		});
+	};
+
+	factory.markBorder = function(path) {
+		path.forEach(function(p, idx) {
+			$timeout(function() {
+
+				var elm = document.getElementById(p);
+
+				elm.style.border = '3px solid green';
+
 			}, 50 * idx);
 		});
 	};

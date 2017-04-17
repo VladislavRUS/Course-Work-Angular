@@ -93,9 +93,17 @@ function ManualExperimentController($rootScope, tableGenerateFactory, tableDrawF
 		tableDrawFactory.drawMatrix(tablePlace, self.currentMatrix);
 
 		graphFactory.findPathBetweenTwoPoints(route[0].idx, route[1].idx, self.currentMatrix, forbidden, route).then(function(data) {
-			tableDrawFactory.markPath(data.withForbidden.split(' '));
-
 			tableDrawFactory.markPath(data.withoutForbidden.split(' '));
+
+			tableDrawFactory.markDiff(data.statistics.diff);
+
+			if (data.statistics.diff.length > 0) {
+				tableDrawFactory.markBorder(data.withForbidden.split(' '));
+			}
+
+			self.withoutForbiddenLength = data.statistics.withoutForbiddenLength;
+			self.withForbiddenLength = data.statistics.withForbiddenLength;
+			self.greenCells = data.statistics.diff.length;
 		});
 	}
 }
