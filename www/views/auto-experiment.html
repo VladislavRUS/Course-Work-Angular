@@ -1,0 +1,104 @@
+<div class="ui container">
+    <h1 class="ui header">
+        Задайте параметры
+    </h1>
+
+    <div class="ui form">
+        <div class="inline fields">
+            <div class="field">
+                <label>Размер матрицы</label>
+                <input type="number" min="1" max="120" step="1" ng-model="ctrl.matrixSize">
+            </div>
+            <div class="field">
+                <label>Количество итераций</label>
+                <input type="number" min="1" max="200" step="1" ng-model="ctrl.iterations">
+            </div>
+            <div class="field">
+                <button class="ui button primary" ng-click="ctrl.start()">
+                    Начать
+                </button>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="ui checkbox">
+        <input type="checkbox"
+               ng-model="ctrl.detailed"
+               ng-click="ctrl.toggleDetailed()">
+        <label>Показать детально</label>
+    </div>
+
+    <div class="ui teal progress" id="progressBar">
+        <div class="bar"></div>
+        <!--<div class="label"></div>-->
+    </div>
+
+    <div class="ui divider"></div>
+
+    <div class="slideAnimation" ng-if="ctrl.detailed">
+
+        <select name="gender" class="ui fluid dropdown" id="select"
+                ng-if="ctrl.show"
+                ng-model="ctrl.currentExperiment"
+                ng-change="ctrl.onClick()">
+
+            <option value="">Эксперимент</option>
+            <option value="{{$index}}"
+                    ng-repeat="d in ctrl.data track by $index">
+                {{'Эксперимент: ' + (d.i + 1) + ', концентрация: ' + d.p}}
+            </option>
+        </select>
+
+        <div class="ui divider"></div>
+
+        <div id="tablePlace" class="slideAnimation"></div>
+
+        <div class="ui divider"></div>
+
+        <div class="ui mini horizontal statistics" ng-if="ctrl.data.length > 0">
+            <div class="statistic">
+                <div class="value">
+                    Длина пути:
+                </div>
+                <div class="label">
+                    {{ctrl.data[ctrl.currentExperiment].statistics.length}}
+                </div>
+            </div>
+            <div class="statistic">
+                <div class="value">
+                    Количество белых клеток:
+                </div>
+                <div class="label">
+                    {{ctrl.data[ctrl.currentExperiment].statistics.whiteCells}}
+                </div>
+            </div>
+            <div class="statistic">
+                <div class="value">
+                    Количество дырок:
+                </div>
+                <div class="label">
+                    {{ctrl.data[ctrl.currentExperiment].statistics.holes.length}}
+                </div>
+            </div>
+        </div>
+
+        <div class="ui divider"></div>
+
+    </div>
+
+    <div id="averageRed"></div>
+
+    <div class="ui divider"></div>
+
+    <div id="averagePathLength"></div>
+
+    <div class="ui divider"></div>
+
+    <div id="averageHolesNumber"></div>
+
+    <div class="ui divider"></div>
+
+    <div id="averageHolesSize"></div>
+
+</div>

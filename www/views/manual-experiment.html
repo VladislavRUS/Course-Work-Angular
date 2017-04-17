@@ -1,0 +1,60 @@
+<div class="ui container">
+    <h1 class="ui header">
+        Задайте параметры
+    </h1>
+
+    <div class="ui form">
+        <div class="fields">
+            <div class="field">
+                <label>Тип заполнения</label>
+                <select class="ui search dropdown" ng-model="ctrl.fillMode">
+                    <option value="random">Случайный</option>
+                    <option value="gradient">Градиент</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="ui divider"></div>
+
+    <div class="ui form">
+        <div class="inline fields">
+            <div class="three wide field">
+                <label>Размер матрицы</label>
+                <input type="number" min="1" max="120" step="1" ng-model="ctrl.matrixSize">
+            </div>
+
+            <div class="three wide field">
+                <label>Вероятность заполнения</label>
+                <input type="number" min="0.05" max="0.95" step="0.05" ng-model="ctrl.possibility">
+            </div>
+
+            <div class="three wide field slideAnimation" ng-if="ctrl.fillMode !== 'random'">
+                <label>Максимальная вероятность</label>
+                <input type="number" min="0.05" max="0.95" step="0.05" ng-model="ctrl.maxPossibility">
+            </div>
+
+            <div class="field">
+                <button class="ui primary button" ng-click="ctrl.generate()">
+                    Сгенерировать
+                </button>
+            </div>
+            <div class="field">
+                <button class="ui button" ng-click="ctrl.findClusters()">
+                    Найти кластеры
+                </button>
+            </div>
+            <div class="field">
+                <button class="ui button" ng-click="ctrl.findPath()">
+                    Найти путь
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="ui divider"></div>
+
+    <div id="tablePlace" class="slideAnimation"></div>
+
+    <div class="ui divider"></div>
+</div>

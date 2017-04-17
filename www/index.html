@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="app">
+<head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="description" content=""/>
+    <meta name="author" content=""/>
+    <link rel="icon" href="favicon.ico"/>
+
+    <title update-title></title>
+
+    <!-- Semantic-UI core CSS -->
+    <link href="lib/semantic/dist/semantic.min.css" rel="stylesheet">
+
+    <!-- Angular CSP-->
+    <link href="lib/angular/css/angular-csp.css" rel="stylesheet"/>
+
+    <!-- Custom styles for this template -->
+    <link href="css/style.css" rel="stylesheet"/>
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+    <script src="lib/html5shiv/html5shiv.min.js"></script>
+    <script src="lib/respond/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- angularjs -->
+    <link href="lib/angular/css/angular-csp.css" rel="stylesheet"/>
+    <script src="lib/angular/js/angular.js"></script>
+    <script src="lib/angular/js/angular-animate.js"></script>
+    <script src="lib/angular/js/angular-ui-router.js"></script>
+    <script src="lib/angular/js/angular-ui-bootstrap-tpls.js"></script>
+
+    <!-- your app's js -->
+
+</head>
+
+<body>
+<div class="ui horizontal inverted sticky menu">
+
+    <a class="item" ui-sref="about">
+        <i class="info icon"></i>
+        Перколяция
+    </a>
+
+    <a class="item" ui-sref="manual-experiment">
+        <i class="hand pointer icon"></i>
+        Ручной эксперимент
+    </a>
+    <a class="item" ui-sref="auto-experiment">
+        <i class="lightning icon"></i>
+        Автоматизированный эксперимент
+    </a>
+</div>
+
+<div class="ui-view-container">
+    <div ui-view>
+    </div>
+</div>
+
+<script src="lib/jquery/jquery.min.js"></script>
+<script src="main.js"></script>
+<script src="lib/semantic/dist/semantic.min.js"></script>
+<script src="lib/semantic/dist/components/dropdown.min.js"></script>
+<!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+<script src="lib/assets/js/ie10-viewport-bug-workaround.js"></script>
+
+</body>
+</html>
