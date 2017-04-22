@@ -4054,8 +4054,6 @@ function slideAnimation() {
 		enter: function(element, doneFn) {
 			var display = $(element).css('display');
 
-			console.log(element);
-
 			$(element).velocity('slideDown', {
 				duration: 300,
 				easing: [0.4, 0.0, 0.2, 1],
@@ -4305,7 +4303,10 @@ function ManualExperimentController($rootScope, tableGenerateFactory, tableDrawF
 	self.possibility = 0.5;
 	self.maxPossibility = 0.5;
 	self.fillMode = 'random';
+	self.testMode = 'checker';
 	self.currentMatrix = null;
+
+	var tablePlace = document.getElementById('tablePlace');
 
 	var route = [];
 	var forbidden = [];
@@ -4324,8 +4325,87 @@ function ManualExperimentController($rootScope, tableGenerateFactory, tableDrawF
 				self.generateGradient();
 				break;
 			}
+
+			case 'test': {
+				self.generateTest();
+				break;
+			}
 		}
 
+	};
+
+	self.generateTest = function () {
+		switch (self.testMode) {
+			case 'checker': {
+				self.generateChecker();
+				break;
+			}
+
+			case 'horizontal': {
+				self.generateHorizontal();
+				break;
+			}
+
+			case 'vertical': {
+				self.generateVertical();
+				break;
+			}
+
+			case 'rain': {
+				self.generateRain();
+				break;
+			}
+
+			case 'rings': {
+				self.generateRings();
+				break;
+			}
+		}
+	};
+
+	self.generateChecker = function () {
+		var size = self.matrixSize;
+		var generatedMatrix = tableGenerateFactory.generateChecker(size);
+
+		self.currentMatrix = angular.copy(generatedMatrix);
+
+		tableDrawFactory.drawMatrix(tablePlace, generatedMatrix);
+	};
+
+	self.generateHorizontal = function () {
+		var size = self.matrixSize;
+		var generatedMatrix = tableGenerateFactory.generateHorizontal(size);
+
+		self.currentMatrix = angular.copy(generatedMatrix);
+
+		tableDrawFactory.drawMatrix(tablePlace, generatedMatrix);
+	};
+
+	self.generateVertical = function () {
+		var size = self.matrixSize;
+		var generatedMatrix = tableGenerateFactory.generateVertical(size);
+
+		self.currentMatrix = angular.copy(generatedMatrix);
+
+		tableDrawFactory.drawMatrix(tablePlace, generatedMatrix);
+	};
+
+	self.generateRain = function () {
+		var size = self.matrixSize;
+		var generatedMatrix = tableGenerateFactory.generateRain(size);
+
+		self.currentMatrix = angular.copy(generatedMatrix);
+
+		tableDrawFactory.drawMatrix(tablePlace, generatedMatrix);
+	};
+
+	self.generateRings = function () {
+		var size = self.matrixSize;
+		var generatedMatrix = tableGenerateFactory.generateRings(size);
+
+		self.currentMatrix = angular.copy(generatedMatrix);
+
+		tableDrawFactory.drawMatrix(tablePlace, generatedMatrix);
 	};
 
 	self.generateRandom = function () {
@@ -4335,8 +4415,6 @@ function ManualExperimentController($rootScope, tableGenerateFactory, tableDrawF
 		var generatedMatrix = tableGenerateFactory.generateRandom(size, p);
 
 		self.currentMatrix = angular.copy(generatedMatrix);
-
-		var tablePlace = document.getElementById('tablePlace');
 
 		tableDrawFactory.drawMatrix(tablePlace, generatedMatrix);
 	};
@@ -4351,20 +4429,17 @@ function ManualExperimentController($rootScope, tableGenerateFactory, tableDrawF
 
 		self.currentMatrix = angular.copy(generatedMatrix);
 
-		var tablePlace = document.getElementById('tablePlace');
-
 		tableDrawFactory.drawMatrix(tablePlace, generatedMatrix);
 	};
 
 	self.findClusters = function () {
-		var tablePlace = document.getElementById('tablePlace');
 
 		clusterFactory.findClusters(self.currentMatrix).then(function (clusteredMatrix) {
 			tableDrawFactory.drawMatrix(tablePlace, clusteredMatrix, true);
 		});
 	};
 
-	$rootScope.$on('tdClick', function(event, args) {
+	$rootScope.$on('tdClick', function (event, args) {
 		var elm = document.getElementById(args.idx);
 		var ctrlKey = args.ctrl;
 
@@ -4383,16 +4458,15 @@ function ManualExperimentController($rootScope, tableGenerateFactory, tableDrawF
 		}
 	});
 
-	self.findPath = function() {
+	self.findPath = function () {
 		if (route.length < 2) {
 			alert('Выберите две точки!');
 			return;
 		}
-		var tablePlace = document.getElementById('tablePlace');
 
 		tableDrawFactory.drawMatrix(tablePlace, self.currentMatrix);
 
-		graphFactory.findPathBetweenTwoPoints(route[0].idx, route[1].idx, self.currentMatrix, forbidden, route).then(function(data) {
+		graphFactory.findPathBetweenTwoPoints(route[0].idx, route[1].idx, self.currentMatrix, forbidden, route).then(function (data) {
 			tableDrawFactory.markPath(data.withoutForbidden.split(' '));
 
 			tableDrawFactory.markDiff(data.statistics.diff);
@@ -4405,7 +4479,7 @@ function ManualExperimentController($rootScope, tableGenerateFactory, tableDrawF
 			self.withForbiddenLength = data.statistics.withForbiddenLength;
 			self.greenCells = data.statistics.diff.length;
 		});
-	}
+	};
 }
 function clusterFactory($q) {
 	var factory = {};
@@ -4610,9 +4684,18 @@ function tableGenerateFactory() {
 			i: i,
 			j: j,
 			idx: idx,
-			color: p > Math.random() ? 'black': 'white'
+			color: p > Math.random() ? 'black' : 'white'
 		}
 
+	};
+
+	factory.createTestCell = function (i, j, idx, color) {
+		return {
+			i: i,
+			j: j,
+			idx: idx,
+			color: color
+		}
 	};
 
 	factory.createEmptyMatrix = function (size) {
@@ -4624,6 +4707,139 @@ function tableGenerateFactory() {
 
 		return matrix;
 	};
+
+	factory.generateChecker = function (size) {
+		var matrix = factory.createEmptyMatrix(size);
+		var cnt = 0;
+
+		for (var i = 0; i < matrix.length; i++) {
+			for (var j = 0; j < matrix.length; j++) {
+				if (i % 2 == 0) {
+					if (j % 2 == 0) {
+						matrix[i][j] = factory.createTestCell(i, j, cnt++, 'black');
+					} else {
+						matrix[i][j] = factory.createTestCell(i, j, cnt++, 'white');
+					}
+				} else {
+					if (j % 2 == 0) {
+						matrix[i][j] = factory.createTestCell(i, j, cnt++, 'white');
+					} else {
+						matrix[i][j] = factory.createTestCell(i, j, cnt++, 'black');
+					}
+				}
+			}
+		}
+
+		return matrix;
+	};
+
+	factory.generateHorizontal = function (size) {
+		var matrix = factory.createEmptyMatrix(size);
+		var cnt = 0;
+
+		for (var i = 0; i < matrix.length; i++) {
+			for (var j = 0; j < matrix.length; j++) {
+				if (i % 2 == 0) {
+					matrix[i][j] = factory.createTestCell(i, j, cnt++, 'black');
+
+				} else {
+					matrix[i][j] = factory.createTestCell(i, j, cnt++, 'white');
+				}
+			}
+		}
+
+		return matrix;
+	};
+
+	factory.generateVertical = function (size) {
+		var matrix = factory.createEmptyMatrix(size);
+		var cnt = 0;
+
+		for (var i = 0; i < matrix.length; i++) {
+			for (var j = 0; j < matrix.length; j++) {
+				if (j % 2 == 0) {
+					matrix[i][j] = factory.createTestCell(i, j, cnt++, 'black');
+
+				} else {
+					matrix[i][j] = factory.createTestCell(i, j, cnt++, 'white');
+				}
+			}
+		}
+
+		return matrix;
+	};
+
+	factory.generateRain = function (size) {
+		var matrix = factory.createEmptyMatrix(size);
+		var cnt = 0;
+
+		for (var i = 0; i < size; i++) {
+			for (var j = 0; j < size; j++) {
+				matrix[i][j] = factory.createTestCell(i, j, cnt++, 'white');
+			}
+		}
+
+		for (var j = 0; j < matrix.length; j += 2) {
+			for (var i = 0; i < matrix.length; i++) {
+
+				var number = Math.floor(Math.random() * 3 + 1);
+
+				var a = (i + number) > matrix.length ? matrix.length - 1 : i + number;
+				for (var k = i; k < a; k++) {
+					matrix[k][j].color = 'black';
+				}
+
+				i += (number + 2);
+			}
+		}
+
+		return matrix;
+	};
+
+	factory.generateRings = function (size) {
+		var matrix = factory.createEmptyMatrix(size);
+		var cnt = 0;
+
+		for (var i = 0; i < size; i++) {
+			for (var j = 0; j < size; j++) {
+				matrix[i][j] = factory.createTestCell(i, j, cnt++, 'white');
+			}
+		}
+
+		for (var i = 0, j = 0; i < matrix.length / 2; i += 2, j += 2) {
+			var first = i;
+			var second = matrix.length - i - 1;
+
+			fillRow(first, j, matrix.length - j, matrix, 'black');
+			fillRow(second, j, matrix.length - j, matrix, 'black');
+		}
+
+		for (var i = 0, j = 0; i < matrix.length / 2; i += 2, j += 2) {
+			var first = i;
+			var second = matrix.length - i - 1;
+
+			fillColumn(first, j, matrix.length - j, matrix, 'black');
+			fillColumn(second, j, matrix.length - j, matrix, 'black');
+		}
+
+
+		console.log(matrix);
+
+		return matrix;
+	};
+
+
+	function fillRow(rowIdx, start, end, matrix, color) {
+		for (var j = start; j < end; j++) {
+			matrix[rowIdx][j].color = color;
+		}
+	}
+
+	function fillColumn(columnIdx, start, end, matrix, color) {
+		for (var i = start; i < end; i++) {
+			matrix[i][columnIdx].color = color;
+		}
+	}
 
 	return factory;
 }

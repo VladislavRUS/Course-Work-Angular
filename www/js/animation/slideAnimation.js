@@ -3,8 +3,6 @@ function slideAnimation() {
 		enter: function(element, doneFn) {
 			var display = $(element).css('display');
 
-			console.log(element);
-
 			$(element).velocity('slideDown', {
 				duration: 300,
 				easing: [0.4, 0.0, 0.2, 1],
