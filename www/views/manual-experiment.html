@@ -95,6 +95,14 @@
                 {{ctrl.greenCells}}
             </div>
         </div>
+        <div class="statistic">
+            <div class="value">
+                Наложились на старый путь:
+            </div>
+            <div class="label">
+                {{ ctrl.greenCells > 0 ? ctrl.withForbiddenLength - ctrl.greenCells : 0}}
+            </div>
+        </div>
     </div>
 
     <div class="ui divider"></div>
