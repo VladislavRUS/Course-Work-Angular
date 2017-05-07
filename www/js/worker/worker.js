@@ -24,10 +24,10 @@ onmessage = function (event) {
             var result = findPath(matrixWithClusters);
             postMessage({
                 action: 'iterations',
-                arr: result.arr,
+                //arr: result.arr,
                 statistics: result.statistics,
                 p: event.data.p,
-                matrix: matrixWithClusters,
+                //matrix: matrixWithClusters,
                 i: event.data.i
             });
 
