@@ -42,7 +42,6 @@ onmessage = function (event) {
             var clustered = finder.findClusters(matrix);
 
             var path = graph.makeGraph(clustered, from, to, event.data.forbidden);
-            console.log(JSON.stringify(path));
 
             postMessage({action: 'graph', path: path, matrix: clustered});
 

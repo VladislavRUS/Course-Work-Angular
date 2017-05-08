@@ -9,6 +9,7 @@ function graphFactory($q, $rootScope) {
 	});
 
 	factory.findPathBetweenTwoPoints = function (from, to, matrix, forbidden) {
+
 		var deferred = $q.defer();
 
 		worker.postMessage({action: 'graph', matrix: matrix, from: from, to: to, forbidden: forbidden});

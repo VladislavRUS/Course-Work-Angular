@@ -36,6 +36,15 @@ angular.module('app', ['ui.router', 'navController', 'ngAnimate'])
 				controllerAs: 'ctrl'
 			})
 
+			.state('around-experiment', {
+				url: "/around-experiment",
+				templateUrl: viewsPrefix + "around-experiment.html",
+				data: {
+					pageTitle: 'Эксперимент с обходом'
+				},
+				controller: 'AroundExperimentController',
+				controllerAs: 'ctrl'
+			})
 	});
 
 angular.module('app').directive('updateTitle', ['$rootScope', '$timeout',
@@ -57,8 +66,9 @@ angular.module('app').directive('updateTitle', ['$rootScope', '$timeout',
 ]);
 
 angular.module('app')
-	.controller('ManualExperimentController', ManualExperimentController)
-	.controller('AutoExperimentController', AutoExperimentController);
+	.controller('AroundExperimentController', AroundExperimentController)
+	.controller('AutoExperimentController', AutoExperimentController)
+	.controller('ManualExperimentController', ManualExperimentController);
 
 angular.module('app')
 	.factory('clusterFactory', clusterFactory)

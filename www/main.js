@@ -3994,6 +3994,15 @@ angular.module('app', ['ui.router', 'navController', 'ngAnimate'])
 				controllerAs: 'ctrl'
 			})
 
+			.state('around-experiment', {
+				url: "/around-experiment",
+				templateUrl: viewsPrefix + "around-experiment.html",
+				data: {
+					pageTitle: 'Эксперимент с обходом'
+				},
+				controller: 'AroundExperimentController',
+				controllerAs: 'ctrl'
+			})
 	});
 
 angular.module('app').directive('updateTitle', ['$rootScope', '$timeout',
@@ -4015,8 +4024,9 @@ angular.module('app').directive('updateTitle', ['$rootScope', '$timeout',
 ]);
 
 angular.module('app')
-	.controller('ManualExperimentController', ManualExperimentController)
-	.controller('AutoExperimentController', AutoExperimentController);
+	.controller('AroundExperimentController', AroundExperimentController)
+	.controller('AutoExperimentController', AutoExperimentController)
+	.controller('ManualExperimentController', ManualExperimentController);
 
 angular.module('app')
 	.factory('clusterFactory', clusterFactory)
@@ -4075,6 +4085,119 @@ function slideAnimation() {
 		}
 	}
 }
+function AroundExperimentController($timeout, tableGenerateFactory, graphFactory) {
+	var self = this;
+	self.matrixSize = 30;
+	self.iterations = 5;
+	self.possibility = 0.5;
+	self.results = [];
+
+	var progressBar = document.getElementById('progressBar');
+
+	self.start = function () {
+		self.results = [];
+		sequence(1, 0);
+	};
+
+	function sequence(i, h) {
+		if (i == self.iterations * self.matrixSize) {
+			processResults();
+			return;
+		}
+
+		if (i % self.iterations == 0) {
+			h++;
+		}
+
+		var size = self.matrixSize;
+		var p = self.possibility;
+
+		var generatedMatrix = tableGenerateFactory.generateRandom(size, p);
+
+		var from = Math.floor(Math.random() * self.matrixSize);
+		var bottomRow = self.matrixSize - 1;
+
+		var to = Math.floor(Math.random() * self.matrixSize);
+		var topRow = 0;
+
+		graphFactory.findPathBetweenTwoPoints(generatedMatrix[bottomRow][from].idx, generatedMatrix[topRow][to].idx, generatedMatrix, []).then(function (path) {
+
+			var withoutForbidden = path.withoutForbidden;
+			var forbidden = parseInt(withoutForbidden.split(' ')[h + 1]);
+
+			graphFactory.findPathBetweenTwoPoints(generatedMatrix[bottomRow][from].idx, generatedMatrix[topRow][to].idx, generatedMatrix, [{idx: forbidden}]).then(function (path) {
+
+				var result = {
+					height: h,
+					poss: 1 - path.statistics.poss
+				};
+
+				self.results.push(result);
+
+				var nextIteration = i + 1;
+
+				sequence(nextIteration, h);
+
+				$(progressBar).progress({
+					percent: (i * 100 / (self.iterations * self.matrixSize))
+				});
+			});
+		});
+	}
+
+	function processResults() {
+
+		$timeout(function () {
+			$(progressBar).progress({
+				percent: 100
+			});
+		}, 500);
+
+		var obj = {};
+
+		self.results.forEach(function (res) {
+			if (!obj[res.height]) {
+				obj[res.height] = {};
+				obj[res.height].arr = [];
+			}
+
+			obj[res.height].arr.push(res.poss);
+		});
+
+		for (var prop in obj) {
+			if (obj.hasOwnProperty(prop)) {
+				var arr = obj[prop].arr;
+
+				var sum = 0;
+
+				for (var i = 0; i < arr.length; i++) {
+					sum += arr[i];
+				}
+
+				obj[prop] = parseFloat((sum / arr.length).toFixed(2));
+			}
+		}
+
+		var trace = {
+			x: [],
+			y: []
+		};
+
+		for (var prop in obj) {
+
+			trace.x.push(prop);
+			trace.y.push(obj[prop]);
+		}
+
+		var layout = {
+			xaxis: {title: 'Высота'},
+			yaxis: {title: 'Лежит на старом пути'}
+		};
+
+		Plotly.newPlot('result', [trace], layout);
+
+	}
+}
 function AutoExperimentController($timeout, $rootScope, tableGenerateFactory, graphFactory, tableDrawFactory) {
 	var self = this;
 
@@ -4086,7 +4209,7 @@ function AutoExperimentController($timeout, $rootScope, tableGenerateFactory, gr
 	self.show = false;
 	self.detailed = false;
 
-	var progressBar = document.getElementById('progressBar')
+	var progressBar = document.getElementById('progressBar');
 
 	self.start = function () {
 		self.data = [];
@@ -4511,6 +4634,7 @@ function graphFactory($q, $rootScope) {
 	});
 
 	factory.findPathBetweenTwoPoints = function (from, to, matrix, forbidden) {
+
 		var deferred = $q.defer();
 
 		worker.postMessage({action: 'graph', matrix: matrix, from: from, to: to, forbidden: forbidden});
@@ -5211,7 +5335,6 @@ onmessage = function (event) {
             var clustered = finder.findClusters(matrix);
 
             var path = graph.makeGraph(clustered, from, to, event.data.forbidden);
-            console.log(JSON.stringify(path));
 
             postMessage({action: 'graph', path: path, matrix: clustered});
 

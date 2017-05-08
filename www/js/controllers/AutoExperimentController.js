@@ -9,7 +9,7 @@ function AutoExperimentController($timeout, $rootScope, tableGenerateFactory, gr
 	self.show = false;
 	self.detailed = false;
 
-	var progressBar = document.getElementById('progressBar')
+	var progressBar = document.getElementById('progressBar');
 
 	self.start = function () {
 		self.data = [];
