@@ -4062,6 +4062,395 @@ angular.module('navController', [])
 		]
 	});
 
+function slideAnimation() {
+	return {
+		enter: function(element, doneFn) {
+			var display = $(element).css('display');
+
+			$(element).velocity('slideDown', {
+				duration: 300,
+				easing: [0.4, 0.0, 0.2, 1],
+				complete: function() {
+					$(element).css('display', display);
+					doneFn();
+				}
+			})
+		},
+
+		leave: function(element, doneFn) {
+			$(element).velocity('slideUp', {
+				duration: 300,
+				easing: [0.4, 0.0, 0.2, 1],
+				complete: function() {
+					doneFn();
+				}
+			})
+		}
+	}
+}
+function clusterFactory($q) {
+	var factory = {};
+
+	factory.findClusters = function (matrix) {
+		var deferred = $q.defer();
+
+		var worker = new Worker('/js/worker/worker.js');
+
+		worker.postMessage({action:'findClusters', matrix: matrix});
+
+		worker.addEventListener('message', function(event) {
+			deferred.resolve(event.data.matrix);
+		});
+
+		return deferred.promise;
+	};
+
+	return factory;
+}
+function graphFactory($q, $rootScope) {
+	var factory = {};
+
+	var worker = new Worker('/js/worker/worker.js');
+
+	worker.addEventListener('message', function (event) {
+		$rootScope.$emit(event.data.action, event.data);
+		//deferred.resolve(event.data);
+	});
+
+	factory.findPathBetweenTwoPoints = function (from, to, matrix, forbidden) {
+
+		var deferred = $q.defer();
+
+		worker.postMessage({action: 'graph', matrix: matrix, from: from, to: to, forbidden: forbidden});
+
+		worker.addEventListener('message', function (event) {
+			deferred.resolve(event.data.path);
+		});
+
+		return deferred.promise;
+	};
+
+	factory.iterativeExperiment = function (matrix, i, p) {
+		//var deferred = $q.defer();
+
+		//var worker = new Worker('/js/worker/worker.js');
+
+		worker.postMessage({action: 'iterations', matrix: matrix, i: i, p: p});
+
+		//return deferred.promise;
+	};
+
+	return factory;
+}
+function tableDrawFactory($timeout, $rootScope) {
+
+	var factory = {};
+
+	factory.drawMatrix = function (elem, matrix, colorful) {
+		elem.innerHTML = '';
+
+		var table = document.createElement('table');
+
+		var N = matrix.length;
+		var width = $(elem).width() / 2;
+
+		var cellSize = width / N + 'px';
+
+		for (var i = 0; i < matrix.length; i++) {
+			var tr = document.createElement('tr');
+
+			for (var j = 0; j < matrix.length; j++) {
+				var td = document.createElement('td');
+
+				td.style.width = cellSize;
+				td.style.height = cellSize;
+
+				for (var prop in matrix[i][j]) {
+					td.setAttribute(prop, matrix[i][j][prop]);
+				}
+
+				td.setAttribute('id', matrix[i][j].idx);
+
+				if (!colorful) {
+					if (matrix[i][j].color == 'white') {
+						td.style.backgroundColor = 'white';
+
+					} else {
+						td.style.backgroundColor = 'black';
+					}
+
+				} else {
+					td.style.backgroundColor = matrix[i][j].color;
+				}
+
+				td.addEventListener('click', tdClick);
+
+				tr.appendChild(td);
+			}
+
+			table.appendChild(tr);
+		}
+
+		elem.appendChild(table);
+	};
+
+	factory.markPath = function(path) {
+		path.forEach(function(p, idx) {
+			$timeout(function() {
+
+				var elm = document.getElementById(p);
+
+				if (elm.style.backgroundColor == 'black') {
+					elm.style.backgroundColor = 'orange';
+
+				} else {
+					elm.style.backgroundColor = 'red';
+				}
+
+			}, 50 * idx);
+		});
+	};
+
+	factory.markDiff = function(path) {
+		path.forEach(function(p, idx) {
+			$timeout(function() {
+
+				var elm = document.getElementById(p);
+
+				elm.style.backgroundColor = 'green';
+
+			}, 50 * idx);
+		});
+	};
+
+	factory.markBorder = function(path) {
+		path.forEach(function(p, idx) {
+			$timeout(function() {
+
+				var elm = document.getElementById(p);
+
+				elm.style.border = '3px solid green';
+
+			}, 50 * idx);
+		});
+	};
+
+	function tdClick(event) {
+		$rootScope.$emit('tdClick', {
+			i: this.getAttribute('i'),
+			j: this.getAttribute('j'),
+			idx: this.getAttribute('idx'),
+			ctrl: event.ctrlKey
+		});
+	}
+
+	return factory;
+}
+function tableGenerateFactory() {
+	var factory = {};
+
+	factory.generateRandom = function (size, p) {
+		var matrix = factory.createEmptyMatrix(size);
+
+		var cnt = 0;
+
+		for (var i = 0; i < size; i++) {
+			for (var j = 0; j < size; j++) {
+				matrix[i][j] = factory.createCell(i, j, cnt++, p);
+			}
+		}
+
+		return matrix;
+	};
+
+	factory.generateGradient = function (size, p, maxP) {
+		var matrix = factory.createEmptyMatrix(size);
+
+		var cnt = 0;
+
+		var startP = p * 2 - maxP;
+
+		var step = (maxP - startP) / (matrix.length / 2);
+
+		for (var i = 0, pos = startP; i < matrix.length / 2; i++, pos += step) {
+			for (var j = 0; j < matrix.length; j++) {
+				matrix[i][j] = factory.createCell(i, j, cnt++, pos);
+			}
+		}
+
+		for (var i = matrix.length / 2 - 1, pos = maxP; i < matrix.length; i++, pos -= step) {
+			for (var j = 0; j < matrix.length; j++) {
+				matrix[i][j] = factory.createCell(i, j, cnt++, pos);
+			}
+		}
+
+		return matrix;
+	};
+
+	factory.createCell = function (i, j, idx, p) {
+		return {
+			i: i,
+			j: j,
+			idx: idx,
+			color: p > Math.random() ? 'black' : 'white'
+		}
+
+	};
+
+	factory.createTestCell = function (i, j, idx, color) {
+		return {
+			i: i,
+			j: j,
+			idx: idx,
+			color: color
+		}
+	};
+
+	factory.createEmptyMatrix = function (size) {
+		var matrix = [];
+
+		for (var i = 0; i < size; i++) {
+			matrix[i] = new Array(size);
+		}
+
+		return matrix;
+	};
+
+	factory.generateChecker = function (size) {
+		var matrix = factory.createEmptyMatrix(size);
+		var cnt = 0;
+
+		for (var i = 0; i < matrix.length; i++) {
+			for (var j = 0; j < matrix.length; j++) {
+				if (i % 2 == 0) {
+					if (j % 2 == 0) {
+						matrix[i][j] = factory.createTestCell(i, j, cnt++, 'black');
+					} else {
+						matrix[i][j] = factory.createTestCell(i, j, cnt++, 'white');
+					}
+				} else {
+					if (j % 2 == 0) {
+						matrix[i][j] = factory.createTestCell(i, j, cnt++, 'white');
+					} else {
+						matrix[i][j] = factory.createTestCell(i, j, cnt++, 'black');
+					}
+				}
+			}
+		}
+
+		return matrix;
+	};
+
+	factory.generateHorizontal = function (size) {
+		var matrix = factory.createEmptyMatrix(size);
+		var cnt = 0;
+
+		for (var i = 0; i < matrix.length; i++) {
+			for (var j = 0; j < matrix.length; j++) {
+				if (i % 2 == 0) {
+					matrix[i][j] = factory.createTestCell(i, j, cnt++, 'black');
+
+				} else {
+					matrix[i][j] = factory.createTestCell(i, j, cnt++, 'white');
+				}
+			}
+		}
+
+		return matrix;
+	};
+
+	factory.generateVertical = function (size) {
+		var matrix = factory.createEmptyMatrix(size);
+		var cnt = 0;
+
+		for (var i = 0; i < matrix.length; i++) {
+			for (var j = 0; j < matrix.length; j++) {
+				if (j % 2 == 0) {
+					matrix[i][j] = factory.createTestCell(i, j, cnt++, 'black');
+
+				} else {
+					matrix[i][j] = factory.createTestCell(i, j, cnt++, 'white');
+				}
+			}
+		}
+
+		return matrix;
+	};
+
+	factory.generateRain = function (size) {
+		var matrix = factory.createEmptyMatrix(size);
+		var cnt = 0;
+
+		for (var i = 0; i < size; i++) {
+			for (var j = 0; j < size; j++) {
+				matrix[i][j] = factory.createTestCell(i, j, cnt++, 'white');
+			}
+		}
+
+		for (var j = 0; j < matrix.length; j += 2) {
+			for (var i = 0; i < matrix.length; i++) {
+
+				var number = Math.floor(Math.random() * 3 + 1);
+
+				var a = (i + number) > matrix.length ? matrix.length - 1 : i + number;
+				for (var k = i; k < a; k++) {
+					matrix[k][j].color = 'black';
+				}
+
+				i += (number + 2);
+			}
+		}
+
+		return matrix;
+	};
+
+	factory.generateRings = function (size) {
+		var matrix = factory.createEmptyMatrix(size);
+		var cnt = 0;
+
+		for (var i = 0; i < size; i++) {
+			for (var j = 0; j < size; j++) {
+				matrix[i][j] = factory.createTestCell(i, j, cnt++, 'white');
+			}
+		}
+
+		for (var i = 0, j = 0; i < matrix.length / 2; i += 2, j += 2) {
+			var first = i;
+			var second = matrix.length - i - 1;
+
+			fillRow(first, j, matrix.length - j, matrix, 'black');
+			fillRow(second, j, matrix.length - j, matrix, 'black');
+		}
+
+		for (var i = 0, j = 0; i < matrix.length / 2; i += 2, j += 2) {
+			var first = i;
+			var second = matrix.length - i - 1;
+
+			fillColumn(first, j, matrix.length - j, matrix, 'black');
+			fillColumn(second, j, matrix.length - j, matrix, 'black');
+		}
+
+
+		console.log(matrix);
+
+		return matrix;
+	};
+
+
+	function fillRow(rowIdx, start, end, matrix, color) {
+		for (var j = start; j < end; j++) {
+			matrix[rowIdx][j].color = color;
+		}
+	}
+
+	function fillColumn(columnIdx, start, end, matrix, color) {
+		for (var i = start; i < end; i++) {
+			matrix[i][columnIdx].color = color;
+		}
+	}
+
+	return factory;
+}
 function AroundExperimentController($timeout, tableGenerateFactory, graphFactory) {
 	var self = this;
 	self.matrixSize = 30;
@@ -4589,395 +4978,6 @@ function ManualExperimentController($rootScope, tableGenerateFactory, tableDrawF
 			self.greenCells = data.statistics.diff.length;
 		});
 	};
-}
-function slideAnimation() {
-	return {
-		enter: function(element, doneFn) {
-			var display = $(element).css('display');
-
-			$(element).velocity('slideDown', {
-				duration: 300,
-				easing: [0.4, 0.0, 0.2, 1],
-				complete: function() {
-					$(element).css('display', display);
-					doneFn();
-				}
-			})
-		},
-
-		leave: function(element, doneFn) {
-			$(element).velocity('slideUp', {
-				duration: 300,
-				easing: [0.4, 0.0, 0.2, 1],
-				complete: function() {
-					doneFn();
-				}
-			})
-		}
-	}
-}
-function clusterFactory($q) {
-	var factory = {};
-
-	factory.findClusters = function (matrix) {
-		var deferred = $q.defer();
-
-		var worker = new Worker('/js/worker/worker.js');
-
-		worker.postMessage({action:'findClusters', matrix: matrix});
-
-		worker.addEventListener('message', function(event) {
-			deferred.resolve(event.data.matrix);
-		});
-
-		return deferred.promise;
-	};
-
-	return factory;
-}
-function graphFactory($q, $rootScope) {
-	var factory = {};
-
-	var worker = new Worker('/js/worker/worker.js');
-
-	worker.addEventListener('message', function (event) {
-		$rootScope.$emit(event.data.action, event.data);
-		//deferred.resolve(event.data);
-	});
-
-	factory.findPathBetweenTwoPoints = function (from, to, matrix, forbidden) {
-
-		var deferred = $q.defer();
-
-		worker.postMessage({action: 'graph', matrix: matrix, from: from, to: to, forbidden: forbidden});
-
-		worker.addEventListener('message', function (event) {
-			deferred.resolve(event.data.path);
-		});
-
-		return deferred.promise;
-	};
-
-	factory.iterativeExperiment = function (matrix, i, p) {
-		//var deferred = $q.defer();
-
-		//var worker = new Worker('/js/worker/worker.js');
-
-		worker.postMessage({action: 'iterations', matrix: matrix, i: i, p: p});
-
-		//return deferred.promise;
-	};
-
-	return factory;
-}
-function tableDrawFactory($timeout, $rootScope) {
-
-	var factory = {};
-
-	factory.drawMatrix = function (elem, matrix, colorful) {
-		elem.innerHTML = '';
-
-		var table = document.createElement('table');
-
-		var N = matrix.length;
-		var width = $(elem).width() / 2;
-
-		var cellSize = width / N + 'px';
-
-		for (var i = 0; i < matrix.length; i++) {
-			var tr = document.createElement('tr');
-
-			for (var j = 0; j < matrix.length; j++) {
-				var td = document.createElement('td');
-
-				td.style.width = cellSize;
-				td.style.height = cellSize;
-
-				for (var prop in matrix[i][j]) {
-					td.setAttribute(prop, matrix[i][j][prop]);
-				}
-
-				td.setAttribute('id', matrix[i][j].idx);
-
-				if (!colorful) {
-					if (matrix[i][j].color == 'white') {
-						td.style.backgroundColor = 'white';
-
-					} else {
-						td.style.backgroundColor = 'black';
-					}
-
-				} else {
-					td.style.backgroundColor = matrix[i][j].color;
-				}
-
-				td.addEventListener('click', tdClick);
-
-				tr.appendChild(td);
-			}
-
-			table.appendChild(tr);
-		}
-
-		elem.appendChild(table);
-	};
-
-	factory.markPath = function(path) {
-		path.forEach(function(p, idx) {
-			$timeout(function() {
-
-				var elm = document.getElementById(p);
-
-				if (elm.style.backgroundColor == 'black') {
-					elm.style.backgroundColor = 'orange';
-
-				} else {
-					elm.style.backgroundColor = 'red';
-				}
-
-			}, 50 * idx);
-		});
-	};
-
-	factory.markDiff = function(path) {
-		path.forEach(function(p, idx) {
-			$timeout(function() {
-
-				var elm = document.getElementById(p);
-
-				elm.style.backgroundColor = 'green';
-
-			}, 50 * idx);
-		});
-	};
-
-	factory.markBorder = function(path) {
-		path.forEach(function(p, idx) {
-			$timeout(function() {
-
-				var elm = document.getElementById(p);
-
-				elm.style.border = '3px solid green';
-
-			}, 50 * idx);
-		});
-	};
-
-	function tdClick(event) {
-		$rootScope.$emit('tdClick', {
-			i: this.getAttribute('i'),
-			j: this.getAttribute('j'),
-			idx: this.getAttribute('idx'),
-			ctrl: event.ctrlKey
-		});
-	}
-
-	return factory;
-}
-function tableGenerateFactory() {
-	var factory = {};
-
-	factory.generateRandom = function (size, p) {
-		var matrix = factory.createEmptyMatrix(size);
-
-		var cnt = 0;
-
-		for (var i = 0; i < size; i++) {
-			for (var j = 0; j < size; j++) {
-				matrix[i][j] = factory.createCell(i, j, cnt++, p);
-			}
-		}
-
-		return matrix;
-	};
-
-	factory.generateGradient = function (size, p, maxP) {
-		var matrix = factory.createEmptyMatrix(size);
-
-		var cnt = 0;
-
-		var startP = p * 2 - maxP;
-
-		var step = (maxP - startP) / (matrix.length / 2);
-
-		for (var i = 0, pos = startP; i < matrix.length / 2; i++, pos += step) {
-			for (var j = 0; j < matrix.length; j++) {
-				matrix[i][j] = factory.createCell(i, j, cnt++, pos);
-			}
-		}
-
-		for (var i = matrix.length / 2 - 1, pos = maxP; i < matrix.length; i++, pos -= step) {
-			for (var j = 0; j < matrix.length; j++) {
-				matrix[i][j] = factory.createCell(i, j, cnt++, pos);
-			}
-		}
-
-		return matrix;
-	};
-
-	factory.createCell = function (i, j, idx, p) {
-		return {
-			i: i,
-			j: j,
-			idx: idx,
-			color: p > Math.random() ? 'black' : 'white'
-		}
-
-	};
-
-	factory.createTestCell = function (i, j, idx, color) {
-		return {
-			i: i,
-			j: j,
-			idx: idx,
-			color: color
-		}
-	};
-
-	factory.createEmptyMatrix = function (size) {
-		var matrix = [];
-
-		for (var i = 0; i < size; i++) {
-			matrix[i] = new Array(size);
-		}
-
-		return matrix;
-	};
-
-	factory.generateChecker = function (size) {
-		var matrix = factory.createEmptyMatrix(size);
-		var cnt = 0;
-
-		for (var i = 0; i < matrix.length; i++) {
-			for (var j = 0; j < matrix.length; j++) {
-				if (i % 2 == 0) {
-					if (j % 2 == 0) {
-						matrix[i][j] = factory.createTestCell(i, j, cnt++, 'black');
-					} else {
-						matrix[i][j] = factory.createTestCell(i, j, cnt++, 'white');
-					}
-				} else {
-					if (j % 2 == 0) {
-						matrix[i][j] = factory.createTestCell(i, j, cnt++, 'white');
-					} else {
-						matrix[i][j] = factory.createTestCell(i, j, cnt++, 'black');
-					}
-				}
-			}
-		}
-
-		return matrix;
-	};
-
-	factory.generateHorizontal = function (size) {
-		var matrix = factory.createEmptyMatrix(size);
-		var cnt = 0;
-
-		for (var i = 0; i < matrix.length; i++) {
-			for (var j = 0; j < matrix.length; j++) {
-				if (i % 2 == 0) {
-					matrix[i][j] = factory.createTestCell(i, j, cnt++, 'black');
-
-				} else {
-					matrix[i][j] = factory.createTestCell(i, j, cnt++, 'white');
-				}
-			}
-		}
-
-		return matrix;
-	};
-
-	factory.generateVertical = function (size) {
-		var matrix = factory.createEmptyMatrix(size);
-		var cnt = 0;
-
-		for (var i = 0; i < matrix.length; i++) {
-			for (var j = 0; j < matrix.length; j++) {
-				if (j % 2 == 0) {
-					matrix[i][j] = factory.createTestCell(i, j, cnt++, 'black');
-
-				} else {
-					matrix[i][j] = factory.createTestCell(i, j, cnt++, 'white');
-				}
-			}
-		}
-
-		return matrix;
-	};
-
-	factory.generateRain = function (size) {
-		var matrix = factory.createEmptyMatrix(size);
-		var cnt = 0;
-
-		for (var i = 0; i < size; i++) {
-			for (var j = 0; j < size; j++) {
-				matrix[i][j] = factory.createTestCell(i, j, cnt++, 'white');
-			}
-		}
-
-		for (var j = 0; j < matrix.length; j += 2) {
-			for (var i = 0; i < matrix.length; i++) {
-
-				var number = Math.floor(Math.random() * 3 + 1);
-
-				var a = (i + number) > matrix.length ? matrix.length - 1 : i + number;
-				for (var k = i; k < a; k++) {
-					matrix[k][j].color = 'black';
-				}
-
-				i += (number + 2);
-			}
-		}
-
-		return matrix;
-	};
-
-	factory.generateRings = function (size) {
-		var matrix = factory.createEmptyMatrix(size);
-		var cnt = 0;
-
-		for (var i = 0; i < size; i++) {
-			for (var j = 0; j < size; j++) {
-				matrix[i][j] = factory.createTestCell(i, j, cnt++, 'white');
-			}
-		}
-
-		for (var i = 0, j = 0; i < matrix.length / 2; i += 2, j += 2) {
-			var first = i;
-			var second = matrix.length - i - 1;
-
-			fillRow(first, j, matrix.length - j, matrix, 'black');
-			fillRow(second, j, matrix.length - j, matrix, 'black');
-		}
-
-		for (var i = 0, j = 0; i < matrix.length / 2; i += 2, j += 2) {
-			var first = i;
-			var second = matrix.length - i - 1;
-
-			fillColumn(first, j, matrix.length - j, matrix, 'black');
-			fillColumn(second, j, matrix.length - j, matrix, 'black');
-		}
-
-
-		console.log(matrix);
-
-		return matrix;
-	};
-
-
-	function fillRow(rowIdx, start, end, matrix, color) {
-		for (var j = start; j < end; j++) {
-			matrix[rowIdx][j].color = color;
-		}
-	}
-
-	function fillColumn(columnIdx, start, end, matrix, color) {
-		for (var i = start; i < end; i++) {
-			matrix[i][columnIdx].color = color;
-		}
-	}
-
-	return factory;
 }
 var finder = {
 	findClusters: function (matr) {
