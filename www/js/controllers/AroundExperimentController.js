@@ -36,16 +36,21 @@ function AroundExperimentController($timeout, tableGenerateFactory, graphFactory
 		graphFactory.findPathBetweenTwoPoints(generatedMatrix[bottomRow][from].idx, generatedMatrix[topRow][to].idx, generatedMatrix, []).then(function (path) {
 
 			var withoutForbidden = path.withoutForbidden;
-			var forbidden = parseInt(withoutForbidden.split(' ')[h + 1]);
+
+			var forbidden;
+
+			forbidden = parseInt(withoutForbidden.split(' ')[h + 1]);
 
 			graphFactory.findPathBetweenTwoPoints(generatedMatrix[bottomRow][from].idx, generatedMatrix[topRow][to].idx, generatedMatrix, [{idx: forbidden}]).then(function (path) {
 
-				var result = {
-					height: h,
-					poss: 1 - path.statistics.poss
-				};
+				if (path) {
+					var result = {
+						height: h,
+						poss: 1 - path.statistics.poss
+					};
 
-				self.results.push(result);
+					self.results.push(result);
+				}
 
 				var nextIteration = i + 1;
 
@@ -68,6 +73,8 @@ function AroundExperimentController($timeout, tableGenerateFactory, graphFactory
 
 		var obj = {};
 
+
+
 		self.results.forEach(function (res) {
 			if (!obj[res.height]) {
 				obj[res.height] = {};
@@ -76,6 +83,8 @@ function AroundExperimentController($timeout, tableGenerateFactory, graphFactory
 
 			obj[res.height].arr.push(res.poss);
 		});
+
+		console.log(self.results);
 
 		for (var prop in obj) {
 			if (obj.hasOwnProperty(prop)) {
