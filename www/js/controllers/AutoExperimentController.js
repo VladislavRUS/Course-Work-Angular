@@ -88,10 +88,40 @@ function AutoExperimentController($timeout, $rootScope, tableGenerateFactory, gr
 
 		console.log(obj);
 
-		averageRed(obj);
-		averagePathLength(obj);
-		averageHolesSize(obj);
-		averageHolesNumber(obj);
+		//averageRed(obj);
+		//averagePathLength(obj);
+		//averageHolesSize(obj);
+		//averageHolesNumber(obj);
+		averageClustersNumber(obj);
+	}
+
+	function averageClustersNumber(obj) {
+		var trace = {
+			x: [],
+			y: []
+		};
+
+		for (var prop in obj) {
+
+			trace.x.push(prop);
+
+			var iterations = obj[prop].iterations;
+
+			var clusters = 0;
+
+			iterations.forEach(function (i) {
+				clusters += i.clusters;
+			});
+
+			trace.y.push(clusters / (iterations.length * Math.pow(self.matrixSize, 2)));
+		}
+
+		var layout = {
+			xaxis: {title: 'Концентрация'},
+			yaxis: {title: 'Количество кластеров'}
+		};
+
+		Plotly.newPlot('averageClusters', [trace], layout);
 	}
 
 	function averageRed(obj) {

@@ -21,11 +21,18 @@ onmessage = function (event) {
 
         case 'iterations': {
             var matrixWithClusters = findClusters(event.data.matrix);
-            var result = findPath(matrixWithClusters);
+            var clusters = getNumberOfClusters(matrixWithClusters);
+            //var result = findPath(matrixWithClusters);
+
+            var result = {
+                statistics: 'fdf'
+            };
+
             postMessage({
                 action: 'iterations',
                 //arr: result.arr,
                 statistics: result.statistics,
+                clusters: clusters,
                 p: event.data.p,
                 //matrix: matrixWithClusters,
                 i: event.data.i
@@ -64,6 +71,20 @@ onmessage = function (event) {
         }
     }
 };
+
+function getNumberOfClusters(matrix) {
+    var clusters = [];
+
+    for (var i = 0; i < matrix.length; i++) {
+        for (var j = 0; j < matrix.length; j++) {
+            if (matrix[i][j].cluster !== -1 && clusters.indexOf(matrix[i][j].cluster) === -1) {
+                clusters.push(matrix[i][j].cluster);
+            }
+        }
+    }
+
+    return clusters.length;
+}
 
 function findClusters(matrix) {
     var k = 0;

@@ -4,6 +4,7 @@ function AroundExperimentController($timeout, tableGenerateFactory, graphFactory
 	self.iterations = 5;
 	self.possibility = 0.5;
 	self.results = [];
+	self.paths = [];
 
 	var progressBar = document.getElementById('progressBar');
 
@@ -36,6 +37,20 @@ function AroundExperimentController($timeout, tableGenerateFactory, graphFactory
 		graphFactory.findPathBetweenTwoPoints(generatedMatrix[bottomRow][from].idx, generatedMatrix[topRow][to].idx, generatedMatrix, []).then(function (path) {
 
 			var withoutForbidden = path.withoutForbidden;
+
+			self.paths.push({
+				p: p,
+				matrix: generatedMatrix,
+				from: {
+					x: bottomRow,
+					y: from
+				},
+				to: {
+					x: topRow,
+					y: to
+				},
+				path: withoutForbidden
+			});
 
 			var forbidden;
 
@@ -72,7 +87,6 @@ function AroundExperimentController($timeout, tableGenerateFactory, graphFactory
 		}, 500);
 
 		var obj = {};
-
 
 
 		self.results.forEach(function (res) {
@@ -118,5 +132,68 @@ function AroundExperimentController($timeout, tableGenerateFactory, graphFactory
 
 		Plotly.newPlot('result', [trace], layout);
 
+		var pathObj = {};
+
+		self.paths.forEach(function(item) {
+			var p = item.p;
+
+			if (!pathObj[p]) {
+				pathObj[p] = {};
+				pathObj[p].arr = [];
+			}
+
+			pathObj[p].arr.push({
+				matrix: item.matrix,
+				path: item.path.split(' ')
+			});
+		});
+
+		var trace2 = {
+			x: [],
+			y: []
+		};
+
+		for (var prop in pathObj) {
+			var p = prop;
+
+			var red = 0, length = 0;
+
+			pathObj[prop].arr.forEach(function(item) {
+				var path = item.path;
+				var matrix = item.matrix;
+
+				length += path.length;
+				path.forEach(function(cell) {
+					var elm = getMatrixElementByIdx(cell, matrix);
+					if (elm.color == 'white') {
+						red++;
+					}
+				})
+			});
+
+			trace2.x.push(p);
+			trace2.y.push(red/length);
+
+			console.log(red/length);
+		}
+
+		var layout2 = {
+			xaxis: {title: 'Концентрация'},
+			yaxis: {title: 'Количество красных'}
+		};
+
+		Plotly.newPlot('paths', [trace2], layout2);
+	}
+
+	function getMatrixElementByIdx(idx, matrix) {
+		for (var i = 0; i < matrix.length; i++) {
+			for (var j = 0; j < matrix.length; j++) {
+				if (matrix[i][j].idx == idx) {
+					return matrix[i][j];
+				}
+			}
+		}
+
+		throw new Error('Idx was not found!');
 	}
 }
